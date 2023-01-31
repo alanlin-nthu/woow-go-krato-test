@@ -28,6 +28,15 @@ properties:
           last:
             title: Last Name
             type: string
+      info:
+        type: object
+        properties:
+          first:
+            title: Mobile Phone
+            type: string
+          last:
+            title: Home Device Address
+            type: string
     required:
     - email
     additionalProperties: false
