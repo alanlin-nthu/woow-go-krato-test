@@ -11,9 +11,9 @@ serve:
     base_url: http://localhost:4434/
 
 selfservice:
-  default_browser_return_url: http://localhost:4455/
+  default_browser_return_url: http://localhost:8080/
   allowed_return_urls:
-    - http://localhost:4455
+    - http://localhost:8080
 
   methods:
     password:
@@ -26,49 +26,49 @@ selfservice:
 
   flows:
     error:
-      ui_url: http://localhost:4455/error
+      ui_url: http://localhost:8080/error
 
     settings:
-      ui_url: http://localhost:4455/settings
+      ui_url: http://localhost:8080/settings
       privileged_session_max_age: 15m
 
     recovery:
       enabled: true
-      ui_url: http://localhost:4455/recovery
+      ui_url: http://localhost:8080/recovery
 
     verification:
       enabled: true
-      ui_url: http://localhost:4455/verification
+      ui_url: http://localhost:8080/verification
       after:
         hooks:
           - hook: web_hook
             config:
-              url: http://self-service-go:4455/
+              url: http://self-service-go:8080/
               method: POST # GET, DELETE, etc
               body: file:///etc/kratos/config/identity.jsonnet
 
     logout:
       after:
-        default_browser_return_url: http://localhost:4455/login
+        default_browser_return_url: http://localhost:8080/login
 
     login:
       lifespan: 10m
-      ui_url: http://localhost:4455/login
+      ui_url: http://localhost:8080/login
       after:
-        default_browser_return_url: "http://localhost:4455/dashboard"
+        default_browser_return_url: "http://localhost:8080/dashboard"
         password:
           hooks:
             - hook: require_verified_address
 
     registration:
       lifespan: 10m
-      ui_url: http://localhost:4455/registration
+      ui_url: http://localhost:8080/registration
       after:
-        default_browser_return_url: http://localhost:4455/registered
+        default_browser_return_url: http://localhost:8080/registered
         hooks:
           - hook: web_hook
             config:
-              url: http://self-service-go:4455/
+              url: http://self-service-go:8080/
               method: POST # GET, DELETE, etc
               body: file:///etc/kratos/config/identity.jsonnet
 

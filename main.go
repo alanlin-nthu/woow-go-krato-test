@@ -240,7 +240,7 @@ func NewServer(kratosPublicEndpointPort int) (*server, error) {
 	return &server{
 		KratosAPIClient:      kratos.NewAPIClient(conf),
 		KratosPublicEndpoint: fmt.Sprintf("http://localhost:%d", kratosPublicEndpointPort),
-		Port:                 ":4455",
+		Port:                 ":8080",
 	}, nil
 }
 
