@@ -133,7 +133,7 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		loginRes, _, err := s.HydraAPIClient.AdminApi.GetLoginRequest(r.Context()).LoginChallenge(challenge).Execute()
 		if err != nil {
 			log.Error(err)
-			writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+			writeError(w, http.StatusUnauthorized, fmt.Errorf("unauthorized OAuth Client"))
 			return
 		}
 		log.Println("got client id: ", loginRes.Client.ClientId)
@@ -141,7 +141,7 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		clientRes, _, err := s.HydraAPIClient.AdminApi.GetOAuth2Client(r.Context(), *loginRes.Client.ClientId).Execute()
 		if err != nil {
 			log.Error(err)
-			writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+			writeError(w, http.StatusUnauthorized, errors.New("unauthorized OAuth Client"))
 			return
 		}
 
@@ -151,14 +151,14 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		md, err := json.Marshal(clientRes.Metadata)
 		if err != nil {
 			log.Error(err)
-			writeError(w, http.StatusInternalServerError, errors.New("Unable to marshal metadata"))
+			writeError(w, http.StatusInternalServerError, errors.New("unable to marshal metadata"))
 			return
 		}
 
 		// convert json string to struct
 		if err = json.Unmarshal([]byte(md), &metadata); err != nil {
 			log.Error(err)
-			writeError(w, http.StatusInternalServerError, errors.New("Internal Server Error"))
+			writeError(w, http.StatusInternalServerError, errors.New("internal Server Error"))
 			return
 		}
 	}
@@ -241,7 +241,7 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		}).Execute()
 	if err != nil {
 		log.Error(err)
-		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+		writeError(w, http.StatusUnauthorized, errors.New("unauthorized OAuth Client"))
 		return
 	}
 
@@ -486,7 +486,7 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 
 	if challenge == "" {
 		log.Println("Missing consent challenge")
-		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+		writeError(w, http.StatusUnauthorized, errors.New("unauthorized OAuth Client"))
 		return
 	}
 
@@ -494,7 +494,7 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 	getConsentRes, _, err := s.HydraAPIClient.AdminApi.GetConsentRequest(r.Context()).ConsentChallenge(challenge).Execute()
 	if err != nil {
 		log.Error(err)
-		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+		writeError(w, http.StatusUnauthorized, errors.New("unauthorized OAuth Client"))
 		return
 	}
 
@@ -504,7 +504,7 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 	session, _, err := s.KratosAPIClient.V0alpha2Api.ToSession(r.Context()).Cookie(cookie).Execute()
 	if err != nil {
 		log.Error(err)
-		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+		writeError(w, http.StatusUnauthorized, errors.New("unauthorized OAuth Client"))
 		return
 	}
 
@@ -522,7 +522,7 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Error(err)
-		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized OAuth Client"))
+		writeError(w, http.StatusUnauthorized, errors.New("unauthorized OAuth Client"))
 		return
 	}
 
