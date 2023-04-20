@@ -10,7 +10,6 @@ import (
 
 	"github.com/AlekSi/pointer"
 	"github.com/atreya2011/kratos-test/server"
-	"github.com/gorilla/sessions"
 	hydra "github.com/ory/hydra-client-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -95,11 +94,11 @@ func main() {
 		log.Info("Skipping OAuth2 client creation...")
 	}
 
-	server.Store.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   216000, // = 1h,
-		HttpOnly: true,   // no websocket or any protocol else
-	}
+	// s.SessionValueStore.Store().Options = &sessions.Options{
+	// 	Path:     "/",
+	// 	MaxAge:   216000, // = 1h,
+	// 	HttpOnly: true,   // no websocket or any protocol else
+	// }
 
 	http.HandleFunc("/login", s.HandleLogin)
 	http.HandleFunc("/logout", s.HandleLogout)

@@ -23,6 +23,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	Path     = "/"
+	MaxAge   = 216000 // 1h
+	HttpOnly = true   // no websocket or any protocol else
+)
+
 type idpConfig struct {
 	ClientID       string                 `yaml:"client_id"`
 	ClientSecret   string                 `yaml:"client_secret"`
@@ -47,6 +53,7 @@ type server struct {
 	OAuth2Config         *oauth2.Config
 	IDPConfig            *idpConfig
 	templates            embed.FS
+	SessionValueStore    *SessionsStore
 }
 
 func NewServer(kratosPublicEndpointAddress, hydraPublicEndpointAddress, hydraAdminEndpointAddress string, idpConfYAML []byte, templates embed.FS) (*server, error) {
@@ -89,6 +96,7 @@ func NewServer(kratosPublicEndpointAddress, hydraPublicEndpointAddress, hydraAdm
 		OAuth2Config:         oauth2Conf,
 		IDPConfig:            &idpConf,
 		templates:            templates,
+		SessionValueStore:    NewSessionsStore([]byte("secret-key"), Path, MaxAge, HttpOnly),
 	}, nil
 }
 
@@ -109,7 +117,7 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		state := base64.StdEncoding.EncodeToString(b)
-		setSessionValue(w, r, "oauth2State", state)
+		s.SessionValueStore.SetSessionValue(w, r, "oauth2State", state)
 
 		// start oauth2 authorization code flow
 		redirectTo := s.OAuth2Config.AuthCodeURL(state)
@@ -156,12 +164,12 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// store metadata value in session
-	v := getSessionValue(w, r, "canRegister")
+	v := s.SessionValueStore.GetSessionValue(w, r, "canRegister")
 	reg, ok := v.(bool)
 	if ok {
 		metadata.Registration = reg
 	} else {
-		setSessionValue(w, r, "canRegister", metadata.Registration)
+		s.SessionValueStore.SetSessionValue(w, r, "canRegister", metadata.Registration)
 	}
 
 	// get cookie from headers
@@ -250,7 +258,7 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	flow, _, err := s.KratosAPIClient.V0alpha2Api.CreateSelfServiceLogoutFlowUrlForBrowsers(r.Context()).Cookie(cookie).Execute()
 	if err != nil {
 		if challenge == "" {
-			v := getSessionValue(w, r, "idToken")
+			v := s.SessionValueStore.GetSessionValue(w, r, "idToken")
 			idToken, ok := v.(string)
 			if !ok {
 				idToken = ""
@@ -273,7 +281,7 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 				redirectURL = getLogoutRequestRes.Client.PostLogoutRedirectUris[0]
 			}
 			log.Println("logout redirect", redirectURL)
-			deleteSessionValues(w, r)
+			s.SessionValueStore.DelSessionValue(w, r)
 			http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 			return
 		}
@@ -321,7 +329,7 @@ func (s *server) HandleRegister(w http.ResponseWriter, r *http.Request, cookie, 
 	}
 
 	// check metadata value in session
-	v := getSessionValue(w, r, "canRegister")
+	v := s.SessionValueStore.GetSessionValue(w, r, "canRegister")
 	reg, ok := v.(bool)
 	if !ok || !reg {
 		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
@@ -430,7 +438,7 @@ func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get oauth2 state from session
-	v := getSessionValue(w, r, "oauth2State")
+	v := s.SessionValueStore.GetSessionValue(w, r, "oauth2State")
 	state, ok := v.(string)
 	if !ok || state == "" {
 		writeError(w, http.StatusUnauthorized, errors.New("Unauthorized"))
@@ -460,7 +468,7 @@ func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ID Token:\n\t%v\n\n", idt)
 
 	// store idToken value in session
-	setSessionValue(w, r, "idToken", idt)
+	s.SessionValueStore.SetSessionValue(w, r, "idToken", idt)
 
 	templateData := templateData{
 		Title:     "Session Details",
