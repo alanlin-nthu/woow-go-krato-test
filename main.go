@@ -23,7 +23,21 @@ var idpConfYAML []byte
 
 func main() {
 	// create server
-	s, err := server.NewServer(4433, 4444, 4445, idpConfYAML, templates)
+	/*
+		// if use docker, change setting is
+			kratosPublicEndpointAddress := "kratos:4433"
+			hydraPublicEndpointAddress := "hydra:4444"
+			hydraAdminEndpointAddress := "hydra:4445"
+	*/
+	kratosPublicEndpointAddress := "localhost:4433"
+	hydraPublicEndpointAddress := "localhost:4444"
+	hydraAdminEndpointAddress := "localhost:4445"
+
+	s, err := server.NewServer(kratosPublicEndpointAddress,
+		hydraPublicEndpointAddress,
+		hydraAdminEndpointAddress,
+		idpConfYAML,
+		templates)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -66,7 +80,7 @@ func main() {
 					ClientName:              pointer.ToString("Test OAuth2 Client"),
 					ClientSecret:            pointer.ToString(s.IDPConfig.ClientSecret),
 					GrantTypes:              []string{"authorization_code", "refresh_token"},
-					RedirectUris:            []string{fmt.Sprintf("http://localhost%s/dashboard", s.Port)},
+					RedirectUris:            []string{fmt.Sprintf("http://localhost:%s/dashboard", s.Port)},
 					ResponseTypes:           []string{"code", "id_token"},
 					Scope:                   pointer.ToString("openid offline"),
 					TokenEndpointAuthMethod: pointer.ToString("client_secret_post"),
@@ -102,5 +116,6 @@ func main() {
 
 	// start server
 	log.Println("Auth Server listening on port 4455")
-	log.Fatalln(http.ListenAndServe(s.Port, http.DefaultServeMux))
+	addr := fmt.Sprintf(":%s", s.Port)
+	log.Fatalln(http.ListenAndServe(addr, http.DefaultServeMux))
 }
