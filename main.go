@@ -92,7 +92,7 @@ func main() {
 	http.HandleFunc("/error", s.HandleError)
 	http.HandleFunc("/registration", s.EnsureCookieFlowID("registration", s.HandleRegister))
 	http.HandleFunc("/verification", s.EnsureCookieFlowID("verification", s.HandleVerification))
-	http.HandleFunc("/registered", s.EnsureCookieReferer(s.HandleRegistered))
+	http.HandleFunc("/registered", server.EnsureCookieReferer(s.HandleRegistered))
 	http.HandleFunc("/dashboard", s.HandleDashboard)
 	http.HandleFunc("/recovery", s.EnsureCookieFlowID("recovery", s.HandleRecovery))
 	http.HandleFunc("/settings", s.EnsureCookieFlowID("settings", s.HandleSettings))
