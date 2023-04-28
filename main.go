@@ -1,18 +1,25 @@
 package main
 
 import (
-	"context"
 	"embed"
-	"flag"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/AlekSi/pointer"
 	"github.com/atreya2011/kratos-test/server"
-	hydra "github.com/ory/hydra-client-go"
 	log "github.com/sirupsen/logrus"
 )
+
+/*
+	Ory Hydra是一個OAuth2.0和OpenID Connect（OIDC）服務器，它提供了授權管理、令牌管理、用戶認證等功能，可以用於保護API和微服務的資源。
+	Ory Kratos則是一個身份管理系統，它提供了用戶註冊、登錄、密碼重置等功能，可以用於管理用戶身份和權限。
+	在實際應用中，Ory Hydra和Ory Kratos可以一起使用，以實現完整的身份驗證和授權系統。具體來說，可以通過以下步驟整合Ory Hydra和Ory Kratos：
+
+	1. 在Ory Kratos中創建用戶並設置相關的身份和權限信息。
+	2. 在API服務器中使用Ory Hydra進行授權管理，通過OIDC協議將Ory Hydra連接到Ory Kratos，以實現身份驗證。
+	3. 當用戶訪問API時，Ory Hydra會使用OIDC協議向Ory Kratos驗證用戶身份，然後根據用戶的權限信息進行授權管理，以確保用戶只能訪問其有權訪問的資源。
+
+	總的來說，Ory Hydra和Ory Kratos的整合可以提供一個安全、可擴展的身份驗證和授權系統，使得API和微服務能夠更加安全地運行。
+*/
 
 //go:embed templates
 var templates embed.FS
@@ -40,65 +47,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
-
-	/**
-		create an OAuth2 client using the following command:
-			curl -X POST 'http://localhost:4445/clients' \
-			-H 'Content-Type: application/json' \
-			--data-raw '{
-					"client_id": "auth-code-client",
-					"client_name": "Test OAuth2 Client",
-					"client_secret": "secret",
-					"grant_types": ["authorization_code", "refresh_token"],
-					"redirect_uris": ["http://localhost:4455/dashboard"],
-					"response_types": ["code", "id_token"],
-					"scope": "openid offline",
-					"token_endpoint_auth_method": "client_secret_post",
-					"metadata": {"registration": true}
-			}'
-		(or)
-		run the compiled binary setting the "-withoauthclient" flag to true to
-		automatically create an oauth2 client on startup (not recommended for production)
-	**/
-	// create an OAuth2 client if none exists
-
-	withOAuthClient := flag.Bool("withoauthclient", false, "Creates an OAuth2 client on startup")
-	flag.Parse()
-
-	if *withOAuthClient {
-		_, _, err = s.HydraAPIClient.AdminApi.GetOAuth2Client(ctx, s.IDPConfig.ClientID).Execute()
-
-		if err != nil {
-			_, _, err = s.HydraAPIClient.AdminApi.CreateOAuth2Client(ctx).
-				OAuth2Client(hydra.OAuth2Client{
-					ClientId:                pointer.ToString(s.IDPConfig.ClientID),
-					ClientName:              pointer.ToString("Test OAuth2 Client"),
-					ClientSecret:            pointer.ToString(s.IDPConfig.ClientSecret),
-					GrantTypes:              []string{"authorization_code", "refresh_token"},
-					RedirectUris:            []string{fmt.Sprintf("http://localhost:%s/dashboard", s.Port)},
-					ResponseTypes:           []string{"code", "id_token"},
-					Scope:                   pointer.ToString("openid offline"),
-					TokenEndpointAuthMethod: pointer.ToString("client_secret_post"),
-					Metadata:                s.IDPConfig.ClientMetadata,
-				}).Execute()
-			if err != nil {
-				log.Fatalln("unable to create OAuth2 client: ", err)
-			}
-			log.Info("Successfully created OAuth2 client!")
-		}
-	} else {
-		log.Info("Skipping OAuth2 client creation...")
-	}
-
-	// s.SessionValueStore.Store().Options = &sessions.Options{
-	// 	Path:     "/",
-	// 	MaxAge:   216000, // = 1h,
-	// 	HttpOnly: true,   // no websocket or any protocol else
-	// }
 
 	http.HandleFunc("/login", s.HandleLogin)
 	http.HandleFunc("/logout", s.HandleLogout)
