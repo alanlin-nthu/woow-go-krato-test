@@ -102,6 +102,13 @@ func NewServer(kratosPublicEndpointAddress, hydraPublicEndpointAddress, hydraAdm
 
 // handleLogin handles login request from hydra and kratos login flow
 func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	/*
+		首先，獲取來自 URL 查詢參數的登錄挑戰和流程 ID。
+		如果 URL 查詢參數中沒有登錄挑戰或流程 ID，則創建 OAuth2 狀態並將其存儲在會話中，然後開始 OAuth2 授權代碼流程。
+		如果 URL 查詢參數中只有登錄挑戰，而沒有流程 ID，則從 Hydra 中獲取登錄請求，並獲取客戶端詳細信息。
+		如果會話不存在，則重定向到登錄頁面並傳遞登錄挑戰。否則，接受 Hydra 登錄請求，將身份驗證信息存儲在會話中並返回授權代碼。
+	*/
+
 	// get login challenge from url query parameters
 	challenge := r.URL.Query().Get("login_challenge")
 	flowID := r.URL.Query().Get("flow")
@@ -250,6 +257,14 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 // handleLogout handles kratos logout flow
 func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	/*
+		1. 從 HTTP 請求中取得 cookie 以及 logout_challenge。
+		2. 透過 Kratos API 創建 Self-Service Logout Flow，並回傳 Logout URL。
+		3. 如果 Logout Flow 已存在，將使用者重新導向至 Logout URL。
+		4. 如果 Logout Flow 不存在，則會從 Hydra API 取得 Logout Request，並進行驗證。
+		5. 驗證成功後，將使用者重新導向至 Logout Request 中所指定的 redirect URL。
+		6. 如果 Logout Flow 不存在且無法從 Hydra API 取得 Logout Request，則會將使用者重新導向至 /login，表示使用者未登入或登入已過期。
+	*/
 	// get cookie from headers
 	cookie := r.Header.Get("cookie")
 	// get logout challenge from url query parameters
@@ -321,6 +336,11 @@ func (s *server) HandleError(w http.ResponseWriter, r *http.Request) {
 
 // handleRegister handles kratos registration flow
 func (s *server) HandleRegister(w http.ResponseWriter, r *http.Request, cookie, flowID string) {
+	/*
+		該函數通過 cookie 和 flowID 從 Kratos API 中獲取註冊流程。然後，它檢查會話中的元數據值，以確定該用戶是否有權進行註冊。
+		如果用戶有權進行註冊，該函數會使用模板引擎將註冊表單渲染為 HTML 並返回給瀏覽器顯示。如果用戶無權進行註冊，則返回 HTTP 狀態碼 401 Unauthorized。
+	*/
+
 	// get the registration flow
 	flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceRegistrationFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 	if err != nil {
@@ -347,6 +367,15 @@ func (s *server) HandleRegister(w http.ResponseWriter, r *http.Request, cookie, 
 
 // handleVerification handles kratos verification flow
 func (s *server) HandleVerification(w http.ResponseWriter, r *http.Request, cookie, flowID string) {
+	/*
+		這個函數接收三個參數：一個 http.ResponseWriter 類型的變數，一個 http.Request 類型的變數，以及兩個字符串變數 cookie 和 flowID。
+
+		1. 函數從 Kratos API 中獲取自助驗證流程的相關信息，其中包括驗證頁面的 UI 設計和流程 ID。
+		2. 如果獲取流程信息時出現錯誤，則函數將使用 http.StatusUnauthorized 狀態碼返回錯誤信息並退出。否則，函數將使用自助驗證流程信息渲染模板，包括標題、UI 設計和模板。
+		3. 如果驗證成功，標題將更新為 "Verification Complete"，並且 UI 設計將被設置為 nil。
+		4. 最後，函數將渲染模板並將其作為 HTTP 響應返回給用戶。
+	*/
+
 	// get self-service verification flow for browser
 	flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceVerificationFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 	if err != nil {
@@ -375,6 +404,11 @@ func (s *server) HandleVerification(w http.ResponseWriter, r *http.Request, cook
 
 // handleRegistered displays registration complete message to user
 func (s *server) HandleRegistered(w http.ResponseWriter, r *http.Request) {
+	/*
+		函數 HandleRegistered，當用戶完成註冊時會被調用，並將用戶重定向到註冊完成的頁面。在這個函數中，
+		我們創建一個模板數據結構，包括網頁標題和模板，然後使用這個結構渲染模板 index.html，並將渲染結果作為 HTTP 響應返回給用戶。
+	*/
+
 	templateData := templateData{
 		Title:     "Registration Complete",
 		Templates: s.templates,
@@ -385,6 +419,13 @@ func (s *server) HandleRegistered(w http.ResponseWriter, r *http.Request) {
 
 // handleRecovery handles kratos recovery flow
 func (s *server) HandleRecovery(w http.ResponseWriter, r *http.Request, cookie, flowID string) {
+	/*
+		函數 HandleRecovery，處理了使用者忘記密碼的情況。如果使用者發送了一個重設密碼的請求，
+		該函式將從Kratos API獲取恢復流程，並將其傳遞給模板引擎進行渲染。這個函式需要三個參數，分別是 w，r 和 cookie 和 flowID。
+		如果獲取流程的過程中發生了錯誤，函式將回傳錯誤訊息和狀態碼。最後，該函式使用模板引擎呈現恢復流程的用戶介面，
+		以便使用者可以輸入他們的電子郵件和驗證碼。
+	*/
+
 	// get self-service recovery flow for browser
 	flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceRecoveryFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 	if err != nil {
@@ -403,6 +444,14 @@ func (s *server) HandleRecovery(w http.ResponseWriter, r *http.Request, cookie, 
 
 // handleSettings handles kratos settings flow
 func (s *server) HandleSettings(w http.ResponseWriter, r *http.Request, cookie, flowID string) {
+	/*
+		用於處理身份驗證和帳戶管理相關的 HTTP 請求。其中的 HandleSettings 函數會從 Kratos 的 API 中取得使用者的設置流程，
+		並在網頁上顯示相關的 UI 元素。這個函數會接收一個 http.ResponseWriter 和一個 http.Request 物件，以及兩個字串參數 cookie 和 flowID。
+		其中，cookie 是用於驗證使用者身份的 cookie，而 flowID 則是設置流程的 ID，用於從 Kratos 的 API 中取得相關的資料。
+		如果函數成功取得了設置流程的資料，則會在網頁上顯示相應的 UI 元素，否則會回傳一個錯誤頁面。
+		最後，這個函數會呼叫 templateData.Render 方法，將相關的 HTML 模板和資料傳遞給 http.ResponseWriter，並渲染出最終的網頁內容。
+	*/
+
 	// get self-service recovery flow for browser
 	flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceSettingsFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 	if err != nil {
@@ -421,6 +470,12 @@ func (s *server) HandleSettings(w http.ResponseWriter, r *http.Request, cookie, 
 
 // handleDashboard shows dashboard
 func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
+	/*
+		用於處理用戶控制台的請求。它首先檢查用戶是否已經通過驗證，如果沒有，則重定向到登錄頁面。
+		接著，它將獲取來自 URL 查詢參數的 OAuth2 狀態和授權碼，然後使用授權碼交換訪問令牌。
+		最後，它將 ID Token 存儲在會話中並將會話詳細信息渲染到模板中返回給用戶。
+	*/
+
 	// get cookie from headers
 	cookie := r.Header.Get("cookie")
 	// get session details
@@ -481,6 +536,20 @@ func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
 
 // handleHydraConsent shows hydra consent screen
 func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
+	/*
+		此函式為處理 Hydra 認可請求的 HTTP 請求處理函式。函式流程如下：
+
+		1. 從 HTTP 請求的 URL 查詢參數中取得認可請求的 challenge 值。
+		2. 如果 challenge 為空，則返回未經授權的 OAuth 用戶端錯誤。
+		3. 使用 Hydra 的管理 API，通過 challenge 值獲取相應的 consent request。
+		4. 從 HTTP 請求標頭中取得 cookie，使用該 cookie 獲取用戶會話詳細信息。
+		5. 接受同意請求，並在用戶會話的 id_token 中添加可驗證地址。
+		6. 如果有任何錯誤發生，返回未經授權的 OAuth 用戶端錯誤。
+		7. 重定向到同意請求的 redirect URL。
+
+		因此，此函式的作用是在 Hydra 的認可請求流程中處理同意請求。
+	*/
+
 	// get consent challenge from url query parameters
 	challenge := r.URL.Query().Get("consent_challenge")
 
