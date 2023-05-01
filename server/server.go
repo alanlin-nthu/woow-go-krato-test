@@ -36,14 +36,6 @@ type idpConfig struct {
 	Port           int                    `yaml:"port"`
 }
 
-// writeError writes error to the response
-func writeError(w http.ResponseWriter, statusCode int, err error) {
-	w.WriteHeader(statusCode)
-	if _, e := w.Write([]byte(err.Error())); e != nil {
-		log.Fatal(err)
-	}
-}
-
 // server contains server information
 type server struct {
 	KratosAPIClient      *kratos.APIClient
@@ -129,7 +121,8 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		// start oauth2 authorization code flow
 		redirectTo := s.OAuth2Config.AuthCodeURL(state)
 		log.Infof("redirect to hydra, url: %s", redirectTo)
-		http.Redirect(w, r, redirectTo, http.StatusFound)
+		// http.Redirect(w, r, redirectTo, http.StatusFound)
+		writeHttpCodeWithData(w, http.StatusFound, redirectTo)
 		return
 	}
 
@@ -206,27 +199,29 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 		// if there is no flow id in url query parameters, create a new flow
 		if flowID == "" {
-			http.Redirect(w, r, redirectTo, http.StatusFound)
+			// http.Redirect(w, r, redirectTo, http.StatusFound)
+			writeHttpCodeWithData(w, http.StatusFound, redirectTo)
 			return
 		}
 
 		// get cookie from headers
 		cookie := r.Header.Get("cookie")
 		// get the login flow
-		flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceLoginFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
+		flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceRecoveryFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 		if err != nil {
 			writeError(w, http.StatusUnauthorized, err)
 			return
 		}
-		templateData := templateData{
-			Title:     "Login",
-			UI:        &flow.Ui,
-			Metadata:  metadata,
-			Templates: s.templates,
-		}
+		// templateData := templateData{
+		// 	Title:     "Login",
+		// 	UI:        &flow.Ui,
+		// 	Metadata:  metadata,
+		// 	Templates: s.templates,
+		// }
 
-		// render template index.html
-		templateData.Render(w)
+		// // render template index.html
+		// templateData.Render(w)
+		writeHttp200(w, flow)
 		return
 	}
 
@@ -252,7 +247,8 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, res.RedirectTo, http.StatusFound)
+	writeHttpCodeWithData(w, http.StatusFound, res.RedirectTo)
+	// http.Redirect(w, r, res.RedirectTo, http.StatusFound)
 }
 
 // handleLogout handles kratos logout flow
@@ -278,7 +274,8 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				idToken = ""
 			}
-			http.Redirect(w, r, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
+			// http.Redirect(w, r, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
+			writeHttpCodeWithData(w, http.StatusSeeOther, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken))
 			return
 		} else {
 			getLogoutRequestRes, _, err := s.HydraAPIClient.AdminApi.GetLogoutRequest(r.Context()).
@@ -297,16 +294,19 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Println("logout redirect", redirectURL)
 			s.SessionValueStore.DelSessionValue(w, r)
-			http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+			// http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+			writeHttpCodeWithData(w, http.StatusSeeOther, redirectURL)
 			return
 		}
 	}
 	// redirect to logout url if session is valid
 	if flow != nil {
-		http.Redirect(w, r, flow.LogoutUrl, http.StatusFound)
+		// http.Redirect(w, r, flow.LogoutUrl, http.StatusFound)
+		writeHttpCodeWithData(w, http.StatusFound, flow.LogoutUrl)
 		return
 	}
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// http.Redirect(w, r, "/login", http.StatusSeeOther)
+	writeHttpCodeWithData(w, http.StatusSeeOther, "/login")
 }
 
 // handleError handles login/registration error
@@ -319,19 +319,8 @@ func (s *server) HandleError(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	// marshal errorDetails to json
-	errorDetailsJSON, err := json.MarshalIndent(errorDetails, "", "  ")
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-	templateData := templateData{
-		Title:     "Error",
-		Details:   string(errorDetailsJSON),
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+
+	writeHttp200(w, errorDetails)
 }
 
 // handleRegister handles kratos registration flow
@@ -356,13 +345,15 @@ func (s *server) HandleRegister(w http.ResponseWriter, r *http.Request, cookie, 
 		return
 	}
 
-	templateData := templateData{
-		Title:     "Registration",
-		UI:        &flow.Ui,
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+	// templateData := templateData{
+	// 	Title:     "Registration",
+	// 	UI:        &flow.Ui,
+	// 	Templates: s.templates,
+	// }
+	// // render template index.html
+	// templateData.Render(w)
+
+	writeHttp200(w, flow)
 }
 
 // handleVerification handles kratos verification flow
@@ -383,23 +374,24 @@ func (s *server) HandleVerification(w http.ResponseWriter, r *http.Request, cook
 		return
 	}
 
-	title := "Verify your Email address"
+	// title := "Verify your Email address"
 	ui := &flow.Ui
 	if flow.Ui.Messages != nil {
 		for _, message := range flow.Ui.Messages {
 			if strings.ToLower(message.GetText()) == "you successfully verified your email address." {
-				title = "Verification Complete"
+				// title = "Verification Complete"
 				ui = nil
 			}
 		}
 	}
-	templateData := templateData{
-		Title:     title,
-		UI:        ui,
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+	// templateData := templateData{
+	// 	Title:     title,
+	// 	UI:        ui,
+	// 	Templates: s.templates,
+	// }
+	// // render template index.html
+	// templateData.Render(w)
+	writeHttp200(w, ui)
 }
 
 // handleRegistered displays registration complete message to user
@@ -409,12 +401,7 @@ func (s *server) HandleRegistered(w http.ResponseWriter, r *http.Request) {
 		我們創建一個模板數據結構，包括網頁標題和模板，然後使用這個結構渲染模板 index.html，並將渲染結果作為 HTTP 響應返回給用戶。
 	*/
 
-	templateData := templateData{
-		Title:     "Registration Complete",
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+	writeHttp200(w, "Registration Complete")
 }
 
 // handleRecovery handles kratos recovery flow
@@ -433,13 +420,21 @@ func (s *server) HandleRecovery(w http.ResponseWriter, r *http.Request, cookie, 
 		return
 	}
 
-	templateData := templateData{
-		Title:     "Password Recovery Form",
-		UI:        &flow.Ui,
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+	// templateData := templateData{
+	// 	Title:     "Password Recovery Form",
+	// 	UI:        &flow.Ui,
+	// 	Templates: s.templates,
+	// }
+	// // render template index.html
+	// templateData.Render(w)
+
+	// jsonData, err := json.Marshal(flow)
+	// if err != nil {
+	// 	writeError(w, http.StatusInternalServerError, err)
+	// 	return
+	// }
+	writeHttp200(w, flow)
+
 }
 
 // handleSettings handles kratos settings flow
@@ -459,13 +454,14 @@ func (s *server) HandleSettings(w http.ResponseWriter, r *http.Request, cookie, 
 		return
 	}
 
-	templateData := templateData{
-		Title:     "Settings",
-		UI:        &flow.Ui,
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+	// templateData := templateData{
+	// 	Title:     "Settings",
+	// 	UI:        &flow.Ui,
+	// 	Templates: s.templates,
+	// }
+	// // render template index.html
+	// templateData.Render(w)
+	writeHttp200(w, flow)
 }
 
 // handleDashboard shows dashboard
@@ -481,16 +477,17 @@ func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
 	// get session details
 	session, _, err := s.KratosAPIClient.V0alpha2Api.ToSession(r.Context()).Cookie(cookie).Execute()
 	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		// http.Redirect(w, r, "/login", http.StatusFound)
+		writeHttpCodeWithData(w, http.StatusFound, "/login")
 		return
 	}
 
-	// marshal session to json
-	sessionJSON, err := json.MarshalIndent(session, "", "  ")
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
+	// // marshal session to json
+	// sessionJSON, err := json.MarshalIndent(session, "", "  ")
+	// if err != nil {
+	// 	writeError(w, http.StatusInternalServerError, err)
+	// 	return
+	// }
 
 	// get oauth2 state from session
 	v := s.SessionValueStore.GetSessionValue(w, r, "oauth2State")
@@ -525,13 +522,15 @@ func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
 	// store idToken value in session
 	s.SessionValueStore.SetSessionValue(w, r, "idToken", idt)
 
-	templateData := templateData{
-		Title:     "Session Details",
-		Details:   string(sessionJSON),
-		Templates: s.templates,
-	}
-	// render template index.html
-	templateData.Render(w)
+	// templateData := templateData{
+	// 	Title:     "Session Details",
+	// 	Details:   string(sessionJSON),
+	// 	Templates: s.templates,
+	// }
+	// // render template index.html
+	// templateData.Render(w)
+
+	writeHttp200(w, session)
 }
 
 // handleHydraConsent shows hydra consent screen
@@ -595,11 +594,13 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, acceptConsentRes.RedirectTo, http.StatusFound)
+	// http.Redirect(w, r, acceptConsentRes.RedirectTo, http.StatusFound)
+	writeHttpCodeWithData(w, http.StatusFound, acceptConsentRes.RedirectTo)
 }
 
 func (s *server) HandleIndex(w http.ResponseWriter, r *http.Request) {
 	b, _ := httputil.DumpRequest(r, true)
 	log.Println(string(b))
-	w.WriteHeader(200)
+	// w.WriteHeader(200)
+	writeHttp200(w, "")
 }

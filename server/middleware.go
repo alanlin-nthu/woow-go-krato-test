@@ -18,7 +18,8 @@ func EnsureCookieFlowID(kratosPublicEndpoint, flowType string, next func(w http.
 		flowID := r.URL.Query().Get("flow")
 		// if there is no flow id in url query parameters, create a new flow
 		if flowID == "" {
-			http.Redirect(w, r, redirectURL, http.StatusFound)
+			// http.Redirect(w, r, redirectURL, http.StatusFound)
+			writeHttpCodeWithData(w, http.StatusFound, redirectURL)
 			return
 		}
 
