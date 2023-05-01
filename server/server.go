@@ -2,7 +2,6 @@ package server
 
 import (
 	"crypto/rand"
-	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -29,6 +28,11 @@ const (
 	HttpOnly = true   // no websocket or any protocol else
 )
 
+type Metadata struct {
+	Registration bool `json:"registration"`
+	Verification bool `json:"verification"`
+}
+
 type idpConfig struct {
 	ClientID       string                 `yaml:"client_id"`
 	ClientSecret   string                 `yaml:"client_secret"`
@@ -44,11 +48,10 @@ type server struct {
 	Port                 string
 	OAuth2Config         *oauth2.Config
 	IDPConfig            *idpConfig
-	templates            embed.FS
 	SessionValueStore    *SessionsStore
 }
 
-func NewServer(kratosPublicEndpointAddress, hydraPublicEndpointAddress, hydraAdminEndpointAddress string, idpConfYAML []byte, templates embed.FS) (*server, error) {
+func NewServer(kratosPublicEndpointAddress, hydraPublicEndpointAddress, hydraAdminEndpointAddress string, idpConfYAML []byte) (*server, error) {
 	// create a new kratos client for self hosted server
 	conf := kratos.NewConfiguration()
 	conf.Servers = kratos.ServerConfigurations{{URL: fmt.Sprintf("http://%s", kratosPublicEndpointAddress)}}
@@ -87,7 +90,6 @@ func NewServer(kratosPublicEndpointAddress, hydraPublicEndpointAddress, hydraAdm
 		Port:                 fmt.Sprintf("%d", idpConf.Port),
 		OAuth2Config:         oauth2Conf,
 		IDPConfig:            &idpConf,
-		templates:            templates,
 		SessionValueStore:    NewSessionsStore([]byte("secret-key"), Path, MaxAge, HttpOnly),
 	}, nil
 }
@@ -121,8 +123,8 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		// start oauth2 authorization code flow
 		redirectTo := s.OAuth2Config.AuthCodeURL(state)
 		log.Infof("redirect to hydra, url: %s", redirectTo)
-		// http.Redirect(w, r, redirectTo, http.StatusFound)
-		writeHttpCodeWithData(w, http.StatusFound, redirectTo)
+		http.Redirect(w, r, redirectTo, http.StatusFound)
+		// writeHttpCodeWithData(w, http.StatusFound, redirectTo)
 		return
 	}
 
@@ -199,8 +201,8 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 		// if there is no flow id in url query parameters, create a new flow
 		if flowID == "" {
-			// http.Redirect(w, r, redirectTo, http.StatusFound)
-			writeHttpCodeWithData(w, http.StatusFound, redirectTo)
+			http.Redirect(w, r, redirectTo, http.StatusFound)
+			// writeHttpCodeWithData(w, http.StatusFound, redirectTo)
 			return
 		}
 
@@ -247,8 +249,8 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeHttpCodeWithData(w, http.StatusFound, res.RedirectTo)
-	// http.Redirect(w, r, res.RedirectTo, http.StatusFound)
+	// writeHttpCodeWithData(w, http.StatusFound, res.RedirectTo)
+	http.Redirect(w, r, res.RedirectTo, http.StatusFound)
 }
 
 // handleLogout handles kratos logout flow
@@ -274,8 +276,8 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				idToken = ""
 			}
-			// http.Redirect(w, r, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
-			writeHttpCodeWithData(w, http.StatusSeeOther, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken))
+			http.Redirect(w, r, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
+			// writeHttpCodeWithData(w, http.StatusSeeOther, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken))
 			return
 		} else {
 			getLogoutRequestRes, _, err := s.HydraAPIClient.AdminApi.GetLogoutRequest(r.Context()).
@@ -294,19 +296,19 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Println("logout redirect", redirectURL)
 			s.SessionValueStore.DelSessionValue(w, r)
-			// http.Redirect(w, r, redirectURL, http.StatusSeeOther)
-			writeHttpCodeWithData(w, http.StatusSeeOther, redirectURL)
+			http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+			// writeHttpCodeWithData(w, http.StatusSeeOther, redirectURL)
 			return
 		}
 	}
 	// redirect to logout url if session is valid
 	if flow != nil {
-		// http.Redirect(w, r, flow.LogoutUrl, http.StatusFound)
-		writeHttpCodeWithData(w, http.StatusFound, flow.LogoutUrl)
+		http.Redirect(w, r, flow.LogoutUrl, http.StatusFound)
+		// writeHttpCodeWithData(w, http.StatusFound, flow.LogoutUrl)
 		return
 	}
-	// http.Redirect(w, r, "/login", http.StatusSeeOther)
-	writeHttpCodeWithData(w, http.StatusSeeOther, "/login")
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// writeHttpCodeWithData(w, http.StatusSeeOther, "/login")
 }
 
 // handleError handles login/registration error
@@ -477,8 +479,8 @@ func (s *server) HandleDashboard(w http.ResponseWriter, r *http.Request) {
 	// get session details
 	session, _, err := s.KratosAPIClient.V0alpha2Api.ToSession(r.Context()).Cookie(cookie).Execute()
 	if err != nil {
-		// http.Redirect(w, r, "/login", http.StatusFound)
-		writeHttpCodeWithData(w, http.StatusFound, "/login")
+		http.Redirect(w, r, "/login", http.StatusFound)
+		// writeHttpCodeWithData(w, http.StatusFound, "/login")
 		return
 	}
 
@@ -594,8 +596,8 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// http.Redirect(w, r, acceptConsentRes.RedirectTo, http.StatusFound)
-	writeHttpCodeWithData(w, http.StatusFound, acceptConsentRes.RedirectTo)
+	http.Redirect(w, r, acceptConsentRes.RedirectTo, http.StatusFound)
+	// writeHttpCodeWithData(w, http.StatusFound, acceptConsentRes.RedirectTo)
 }
 
 func (s *server) HandleIndex(w http.ResponseWriter, r *http.Request) {

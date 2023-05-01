@@ -1,7 +1,7 @@
 package main
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 	"net/http"
 
@@ -19,10 +19,13 @@ import (
 	3. 當用戶訪問API時，Ory Hydra會使用OIDC協議向Ory Kratos驗證用戶身份，然後根據用戶的權限信息進行授權管理，以確保用戶只能訪問其有權訪問的資源。
 
 	總的來說，Ory Hydra和Ory Kratos的整合可以提供一個安全、可擴展的身份驗證和授權系統，使得API和微服務能夠更加安全地運行。
-*/
 
-//go:embed templates
-var templates embed.FS
+	在這個流程中，OAuth 2客戶端（瀏覽器）向ORY Hydra發起OAuth2授權代碼或隱式流程請求。如果用戶沒有登錄，則ORY Hydra會將用戶重定向到代理UI的登錄端點，
+	並在URL中包含一個login_challenge的參數。
+	代理UI會檢查是否存在任何現有的登錄流程，如果沒有，則它會向ORY Kratos發送請求以創建一個新的登錄流程。然後代理UI會將用戶重定向到Kratos的登錄用戶界面。
+	用戶輸入其認證憑證後，代理UI會將其提交給Kratos進行驗證。如果認證成功，Kratos會為該用戶創建一個會話cookie，並將用戶重定向到ORY Hydra的同意端點。
+	代理UI會自動檢查此cookie，如果有效，則會將用戶自動重定向到最初的OAuth2請求，並通過ORY Hydra將訪問令牌傳遞給OAuth 2客戶端（瀏覽器）。
+*/
 
 //go:embed config/idp.yml
 var idpConfYAML []byte
@@ -42,8 +45,7 @@ func main() {
 	s, err := server.NewServer(kratosPublicEndpointAddress,
 		hydraPublicEndpointAddress,
 		hydraAdminEndpointAddress,
-		idpConfYAML,
-		templates)
+		idpConfYAML)
 	if err != nil {
 		log.Fatalln(err)
 	}
