@@ -28,7 +28,7 @@ var templates embed.FS
 var idpConfYAML []byte
 
 //go:embed config/conninfo.yml
-var connInfoConfYAML []byte
+var conninfoConfYAML []byte
 
 func main() {
 	// create server
@@ -43,7 +43,7 @@ func main() {
 		hydraPublicEndpointAddress := "localhost:4444"
 		hydraAdminEndpointAddress := "localhost:4445"
 	*/
-	s, err := server.NewServer(connInfoConfYAML,
+	s, err := server.NewServer(conninfoConfYAML,
 		idpConfYAML,
 		templates)
 	if err != nil {

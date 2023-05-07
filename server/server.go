@@ -36,10 +36,10 @@ type idpConfig struct {
 	Port           int                    `yaml:"port"`
 }
 
-type connInfoConfig struct {
-	kratosPublicEndpointAddress string `yaml:"kratos_public_endpoint_address"`
-	hydraPublicEndpointAddress  string `yaml:"hydra_public_endpoint_address"`
-	hydraAdminEndpointAddress   string `yaml:"hydra_admin_endpoint_address"`
+type conninfoConfig struct {
+	KratosPublicEndpointAddress string `yaml:"kratos_public_endpoint_address"`
+	HydraPublicEndpointAddress  string `yaml:"hydra_public_endpoint_address"`
+	HydraAdminEndpointAddress   string `yaml:"hydra_admin_endpoint_address"`
 }
 
 // writeError writes error to the response
@@ -64,7 +64,7 @@ type server struct {
 
 func NewServer(connInfoConfYAML []byte, idpConfYAML []byte, templates embed.FS) (*server, error) {
 
-	connInfoConf := connInfoConfig{}
+	connInfoConf := conninfoConfig{}
 
 	if err := yaml.Unmarshal(connInfoConfYAML, &connInfoConf); err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func NewServer(connInfoConfYAML []byte, idpConfYAML []byte, templates embed.FS) 
 
 	// create a new kratos client for self hosted server
 	conf := kratos.NewConfiguration()
-	conf.Servers = kratos.ServerConfigurations{{URL: fmt.Sprintf("http://%s", connInfoConf.kratosPublicEndpointAddress)}}
+	conf.Servers = kratos.ServerConfigurations{{URL: fmt.Sprintf("http://%s", connInfoConf.KratosPublicEndpointAddress)}}
 	cj, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func NewServer(connInfoConfYAML []byte, idpConfYAML []byte, templates embed.FS) 
 	conf.HTTPClient = &http.Client{Jar: cj}
 
 	hydraConf := hydra.NewConfiguration()
-	hydraConf.Servers = hydra.ServerConfigurations{{URL: fmt.Sprintf("http://%s", connInfoConf.hydraAdminEndpointAddress)}}
+	hydraConf.Servers = hydra.ServerConfigurations{{URL: fmt.Sprintf("http://%s", connInfoConf.HydraAdminEndpointAddress)}}
 
 	idpConf := idpConfig{}
 
@@ -93,8 +93,8 @@ func NewServer(connInfoConfYAML []byte, idpConfYAML []byte, templates embed.FS) 
 		ClientSecret: idpConf.ClientSecret,
 		RedirectURL:  fmt.Sprintf("http://localhost:%d/dashboard", idpConf.Port),
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  fmt.Sprintf("http://%s/oauth2/auth", connInfoConf.hydraPublicEndpointAddress), // access from browser
-			TokenURL: fmt.Sprintf("http://%s/oauth2/token", connInfoConf.hydraAdminEndpointAddress), // access from server
+			AuthURL:  fmt.Sprintf("http://%s/oauth2/auth", connInfoConf.HydraPublicEndpointAddress), // access from browser
+			TokenURL: fmt.Sprintf("http://%s/oauth2/token", connInfoConf.HydraAdminEndpointAddress), // access from server
 		},
 		Scopes: []string{"openid", "offline"},
 	}
@@ -103,7 +103,7 @@ func NewServer(connInfoConfYAML []byte, idpConfYAML []byte, templates embed.FS) 
 
 	return &server{
 		KratosAPIClient:      kratos.NewAPIClient(conf),
-		KratosPublicEndpoint: fmt.Sprintf("http://%s", connInfoConf.kratosPublicEndpointAddress),
+		KratosPublicEndpoint: fmt.Sprintf("http://%s", connInfoConf.KratosPublicEndpointAddress),
 		HydraAPIClient:       hydra.NewAPIClient(hydraConf),
 		Port:                 fmt.Sprintf("%d", idpConf.Port),
 		OAuth2Config:         oauth2Conf,
