@@ -66,7 +66,7 @@ func main() {
 					ClientName:              pointer.ToString("Test OAuth2 Client"),
 					ClientSecret:            pointer.ToString(s.IDPConfig.ClientSecret),
 					GrantTypes:              []string{"authorization_code", "refresh_token"},
-					RedirectUris:            []string{fmt.Sprintf("http://localhost%s/dashboard", s.Port)},
+					RedirectUris:            []string{fmt.Sprintf("http://34.27.50.28%s/dashboard", s.Port)},
 					ResponseTypes:           []string{"code", "id_token"},
 					Scope:                   pointer.ToString("openid offline"),
 					TokenEndpointAuthMethod: pointer.ToString("client_secret_post"),

@@ -71,10 +71,10 @@ func NewServer(kratosPublicEndpointPort, hydraPublicEndpointPort, hydraAdminEndp
 	oauth2Conf := &oauth2.Config{
 		ClientID:     idpConf.ClientID,
 		ClientSecret: idpConf.ClientSecret,
-		RedirectURL:  fmt.Sprintf("http://localhost:%d/dashboard", idpConf.Port),
+		RedirectURL:  fmt.Sprintf("http://34.27.50.28:%d/dashboard", idpConf.Port),
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  fmt.Sprintf("http://localhost:%d/oauth2/auth", hydraPublicEndpointPort), // access from browser
-			TokenURL: fmt.Sprintf("http://hydra:%d/oauth2/token", hydraPublicEndpointPort),    // access from server
+			AuthURL:  fmt.Sprintf("http://34.27.50.28:%d/oauth2/auth", hydraPublicEndpointPort), // access from browser
+			TokenURL: fmt.Sprintf("http://hydra:%d/oauth2/token", hydraPublicEndpointPort),      // access from server
 		},
 		Scopes: []string{"openid", "offline"},
 	}
@@ -83,7 +83,7 @@ func NewServer(kratosPublicEndpointPort, hydraPublicEndpointPort, hydraAdminEndp
 
 	return &server{
 		KratosAPIClient:      kratos.NewAPIClient(conf),
-		KratosPublicEndpoint: fmt.Sprintf("http://localhost:%d", kratosPublicEndpointPort),
+		KratosPublicEndpoint: fmt.Sprintf("http://34.27.50.28:%d", kratosPublicEndpointPort),
 		HydraAPIClient:       hydra.NewAPIClient(hydraConf),
 		Port:                 fmt.Sprintf(":%d", idpConf.Port),
 		OAuth2Config:         oauth2Conf,
@@ -255,7 +255,7 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				idToken = ""
 			}
-			http.Redirect(w, r, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
+			http.Redirect(w, r, fmt.Sprintf("http://34.27.50.28:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
 			return
 		} else {
 			getLogoutRequestRes, _, err := s.HydraAPIClient.AdminApi.GetLogoutRequest(r.Context()).

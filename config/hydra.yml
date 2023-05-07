@@ -17,13 +17,13 @@ oidc:
       salt: youReallyNeedToChangeThis
 
 urls:
-  login: http://localhost:4455/login
-  consent: http://localhost:4455/auth/consent
-  logout: http://localhost:4455/logout
-  error: http://localhost:4455/error
+  login: http://34.27.50.28:4455/login
+  consent: http://34.27.50.28:4455/auth/consent
+  logout: http://34.27.50.28:4455/logout
+  error: http://34.27.50.28:4455/error
   self:
-    public: http://localhost:4444/
-    issuer: http://localhost:4444/
+    public: http://34.27.50.28:4444/
+    issuer: http://34.27.50.28:4444/
 
 ttl:
   access_token: 1h
