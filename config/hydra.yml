@@ -8,37 +8,79 @@ serve:
 
 dsn: postgres://auth:secret@auth-db:5432/auth?sslmode=disable&max_conns=20&max_idle_conns=4
 
+# oidc configures OpenID Connect features.
 oidc:
+  # subject_identifiers configures the Subject Identifier algorithm.
+  #
+  # For more information please head over to the documentation:
+  # -> https://www.ory.sh/docs/hydra/advanced#subject-identifier-algorithms
   subject_identifiers:
+    # which algorithms to enable. Defaults to "public"
     supported_types:
       - public
       - pairwise
     pairwise:
-      salt: youReallyNeedToChangeThis
+      # if "pairwise" is enabled, the salt must be defined.
+      salt: some-random-salt
 
 urls:
-  login: http://localhost:4455/login
-  consent: http://localhost:4455/auth/consent
-  logout: http://localhost:4455/logout
-  error: http://localhost:4455/error
   self:
-    public: http://localhost:4444/
-    issuer: http://localhost:4444/
+    # This value will be used as the "issuer" in access and ID tokens. It must be
+    # specified and using HTTPS protocol, unless --dev is set. This should typically be equal
+    # to the public value.
+    issuer: https://localhost:4444/
+
+    # This is the base location of the public endpoints of your Ory Hydra installation. This should typically be equal
+    # to the issuer value. If left unspecified, it falls back to the issuer value.
+    public: https://localhost:4444/
+  # Sets the login endpoint of the User Login & Consent flow. Defaults to an internal fallback URL.
+  login: http://localhost:4455/login
+  # Sets the consent endpoint of the User Login & Consent flow. Defaults to an internal fallback URL.
+  consent: http://localhost:4455/auth/consent
+  # Sets the logout endpoint. Defaults to an internal fallback URL.
+  logout: http://localhost:4455/logout
+  # Sets the error endpoint. The error ui will be shown when an OAuth2 error occurs that which can not be sent back
+  # to the client. Defaults to an internal fallback URL.
+  error: http://localhost:4455/error
+
 
 ttl:
+  # configures how long a user login and consent flow may take. Defaults to 1h.
+  login_consent_request: 1h
+  # configures how long access tokens are valid. Defaults to 1h.
   access_token: 1h
-  refresh_token: 1h
+  # configures how long refresh tokens are valid. Defaults to 720h. Set to -1 for refresh tokens to never expire.
+  refresh_token: 720h
+  # configures how long id tokens are valid. Defaults to 1h.
   id_token: 1h
-  auth_code: 1h
+  # configures how long auth codes are valid. Defaults to 10m.
+  auth_code: 10m
 
 oauth2:
+  # Set this to true if you want to share error debugging information with your OAuth 2.0 clients.
+  # Keep in mind that debug information is very valuable when dealing with errors, but might also expose database error
+  # codes and similar errors. Defaults to false.
   expose_internal_errors: true
 
 secrets:
-  cookie:
-    - youReallyNeedToChangeThis
+  # The system secret must be at least 16 characters long. If none is provided, one will be generated. They key
+  # is used to encrypt sensitive data using AES-GCM (256 bit) and validate HMAC signatures.
+  #
+  # The first item in the list is used for signing and encryption. The whole list is used for verifying signatures
+  # and decryption.
   system:
-    - youReallyNeedToChangeThis
+    - this-is-the-primary-secret
+    - this-is-an-old-secret
+    - this-is-another-old-secret
+  # A secret that is used to encrypt cookie sessions. Defaults to secrets.system. It is recommended to use
+  # a separate secret in production.
+  #
+  # The first item in the list is used for signing and encryption. The whole list is used for verifying signatures
+  # and decryption.
+  cookie:
+    - this-is-the-primary-secret
+    - this-is-an-old-secret
+    - this-is-another-old-secret
 
 log:
   leak_sensitive_values: true
