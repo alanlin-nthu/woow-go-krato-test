@@ -11,14 +11,9 @@ type PersonSchemaJsonTraits struct {
 
 	// Name corresponds to the JSON schema field "name".
 	Name *PersonSchemaJsonTraitsName `json:"name,omitempty" yaml:"name,omitempty"`
-}
 
-type PersonSchemaJsonTraitsName struct {
-	// First corresponds to the JSON schema field "first".
-	First *string `json:"first,omitempty" yaml:"first,omitempty"`
-
-	// Last corresponds to the JSON schema field "last".
-	Last *string `json:"last,omitempty" yaml:"last,omitempty"`
+	// connect information corresponds to the JSON schema field "info".
+	Info *PersonSchemaJsonTraitsInfo `json:"info,omitempty" yaml:"info,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -37,6 +32,22 @@ func (j *PersonSchemaJsonTraits) UnmarshalJSON(b []byte) error {
 	}
 	*j = PersonSchemaJsonTraits(plain)
 	return nil
+}
+
+type PersonSchemaJsonTraitsName struct {
+	// First corresponds to the JSON schema field "first".
+	First *string `json:"first,omitempty" yaml:"first,omitempty"`
+
+	// Last corresponds to the JSON schema field "last".
+	Last *string `json:"last,omitempty" yaml:"last,omitempty"`
+}
+
+type PersonSchemaJsonTraitsInfo struct {
+	// First corresponds to the JSON schema field "mobile".
+	Mobile *string `json:"mobile,omitempty" yaml:"mobile,omitempty"`
+
+	// Last corresponds to the JSON schema field "domain".
+	Domain *string `json:"domain,omitempty" yaml:"domain,omitempty"`
 }
 
 type PersonSchemaJson struct {

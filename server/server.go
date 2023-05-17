@@ -586,7 +586,9 @@ func (s *server) HandleHydraConsent(w http.ResponseWriter, r *http.Request) {
 			Remember:    pointer.ToBool(true),
 			RememberFor: pointer.ToInt64(3600),
 			Session: &hydra.ConsentRequestSession{
-				IdToken: service.PersonSchemaJsonTraits{Email: session.Identity.VerifiableAddresses[0].Value},
+				IdToken: service.PersonSchemaJsonTraits{
+					Email: session.Identity.VerifiableAddresses[0].Value,
+				},
 			},
 		}).Execute()
 

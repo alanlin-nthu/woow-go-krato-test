@@ -38,6 +38,19 @@
               "type": "string"
             }
           }
+        },
+        "info": {
+          "type": "object",
+          "properties": {
+            "mobile": {
+              "title": "Mobile Phone",
+              "type": "string"
+            },
+            "domain": {
+              "title": "Home Device Address",
+              "type": "string"
+            }
+          }
         }
       },
       "required": [
