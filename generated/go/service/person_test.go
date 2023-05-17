@@ -8,7 +8,7 @@ import (
 )
 
 func TestPersonSchemaJsonTraits_UnmarshalJSON(t *testing.T) {
-	jsonData := []byte(`{"email": "test@example.com", "name": {"first": "John", "last": "Doe"}, "info": {"mobile": "1234567890", "domain": "123 Main St"}}`)
+	jsonData := []byte(`{"email": "test@example.com", "name": {"first": "John", "last": "Doe"}, "info": {"mobile": "1234567890", "domain": "http://127.0.0.1", "key": "secret_123456"}}`)
 
 	var person service.PersonSchemaJsonTraits
 
@@ -30,7 +30,10 @@ func TestPersonSchemaJsonTraits_UnmarshalJSON(t *testing.T) {
 	if person.Info == nil || person.Info.Mobile == nil || *person.Info.Mobile != "1234567890" {
 		t.Error("Info.Phone field not parsed correctly.")
 	}
-	if person.Info == nil || person.Info.Domain == nil || *person.Info.Domain != "123 Main St" {
+	if person.Info == nil || person.Info.Domain == nil || *person.Info.Domain != "http://127.0.0.1" {
+		t.Error("Info.Address field not parsed correctly.")
+	}
+	if person.Info == nil || person.Info.Key == nil || *person.Info.Key != "secret_123456" {
 		t.Error("Info.Address field not parsed correctly.")
 	}
 

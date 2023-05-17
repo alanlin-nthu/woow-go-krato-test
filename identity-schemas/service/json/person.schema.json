@@ -49,6 +49,10 @@
             "domain": {
               "title": "Home Device Address",
               "type": "string"
+            },
+            "key": {
+              "title": "Webhook key",
+              "type": "string"
             }
           }
         }

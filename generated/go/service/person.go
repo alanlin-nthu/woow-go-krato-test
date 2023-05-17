@@ -43,11 +43,14 @@ type PersonSchemaJsonTraitsName struct {
 }
 
 type PersonSchemaJsonTraitsInfo struct {
-	// First corresponds to the JSON schema field "mobile".
+	// Mobile corresponds to the JSON schema field "mobile".
 	Mobile *string `json:"mobile,omitempty" yaml:"mobile,omitempty"`
 
-	// Last corresponds to the JSON schema field "domain".
+	// Domain corresponds to the JSON schema field "domain".
 	Domain *string `json:"domain,omitempty" yaml:"domain,omitempty"`
+
+	// Key corresponds to the JSON schema field "key".
+	Key *string `json:"key,omitempty" yaml:"key,omitempty"`
 }
 
 type PersonSchemaJson struct {
