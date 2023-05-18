@@ -194,7 +194,7 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 			"return_to": []string{returnTo},
 			"refresh":   []string{"true"},
 		}
-		redirectTo := fmt.Sprintf("%s/self-service/login/browser?", s.KratosPublicEndpoint) + redirectToParam.Encode()
+		redirectTo := fmt.Sprintf("%s/self-service/login/api?", s.KratosPublicEndpoint) + redirectToParam.Encode()
 
 		// get flowID from url query parameters
 		flowID := r.URL.Query().Get("flow")

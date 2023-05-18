@@ -11,7 +11,7 @@ import (
 // flow ID in url query parameters and cookie in header
 func EnsureCookieFlowID(kratosPublicEndpoint, flowType string, next func(w http.ResponseWriter, r *http.Request, cookie, flowID string)) http.HandlerFunc {
 	// create redirect url based on flow type
-	redirectURL := fmt.Sprintf("%s/self-service/%s/browser", kratosPublicEndpoint, flowType)
+	redirectURL := fmt.Sprintf("%s/self-service/%s/api", kratosPublicEndpoint, flowType)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get flowID from url query parameters
