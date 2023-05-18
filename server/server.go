@@ -209,7 +209,7 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		// get cookie from headers
 		cookie := r.Header.Get("cookie")
 		// get the login flow
-		flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceRecoveryFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
+		flow, _, err := s.KratosAPIClient.V0alpha2Api.GetSelfServiceLoginFlow(r.Context()).Id(flowID).Cookie(cookie).Execute()
 		if err != nil {
 			writeError(w, http.StatusUnauthorized, err)
 			return
