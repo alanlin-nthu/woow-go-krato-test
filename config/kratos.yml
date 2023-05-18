@@ -43,7 +43,7 @@ selfservice:
         hooks:
           - hook: web_hook
             config:
-              url: http://self-service-go:4455/
+              url: http://localhost:4455/
               method: POST # GET, DELETE, etc
               body: file:///etc/kratos/config/identity.jsonnet
 
@@ -68,7 +68,7 @@ selfservice:
         hooks:
           - hook: web_hook
             config:
-              url: http://self-service-go:4455/
+              url: http://localhost:4455/
               method: POST # GET, DELETE, etc
               body: file:///etc/kratos/config/identity.jsonnet
 
