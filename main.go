@@ -30,22 +30,22 @@ import (
 //go:embed config/idp.yml
 var idpConfYAML []byte
 
+//go:embed config/conn_info.yml
+var conninfoConfYAML []byte
+
 func main() {
 	// create server
-	/*
-		// if use docker, change setting is
-			kratosPublicEndpointAddress := "kratos:4433"
-			hydraPublicEndpointAddress := "hydra:4444"
-			hydraAdminEndpointAddress := "hydra:4445"
-	*/
-	kratosPublicEndpointAddress := "localhost:4433"
-	hydraPublicEndpointAddress := "localhost:4444"
-	hydraAdminEndpointAddress := "localhost:4445"
 
-	s, err := server.NewServer(kratosPublicEndpointAddress,
-		hydraPublicEndpointAddress,
-		hydraAdminEndpointAddress,
-		idpConfYAML)
+	// if use docker, change setting is
+	// kratosPublicEndpointAddress := "kratos:4433"
+	// hydraPublicEndpointAddress := "hydra:4444"
+	// hydraAdminEndpointAddress := "hydra:4445"
+
+	// kratosPublicEndpointAddress := "localhost:4433"
+	// hydraPublicEndpointAddress := "localhost:4444"
+	// hydraAdminEndpointAddress := "localhost:4445"
+
+	s, err := server.NewServer(conninfoConfYAML, idpConfYAML)
 	if err != nil {
 		log.Fatalln(err)
 	}

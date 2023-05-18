@@ -1,0 +1,5 @@
+address: localhost
+kratos_public_endpoint_port: 4433
+hydra_public_endpoint_port: 4444
+hydra_admin_endpoint_port: 4445
+port: 4455
