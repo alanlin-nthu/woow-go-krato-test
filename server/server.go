@@ -215,8 +215,8 @@ func (s *server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 		// if there is no flow id in url query parameters, create a new flow
 		if flowID == "" {
-			http.Redirect(w, r, redirectTo, http.StatusFound)
-			// writeHttpCodeWithData(w, http.StatusFound, redirectTo)
+			// http.Redirect(w, r, redirectTo, http.StatusFound)
+			writeHttpCodeWithData(w, http.StatusFound, redirectTo)
 			return
 		}
 
