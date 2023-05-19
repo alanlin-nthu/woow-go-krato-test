@@ -290,7 +290,7 @@ func (s *server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				idToken = ""
 			}
-			http.Redirect(w, r, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
+			http.Redirect(w, r, fmt.Sprintf("http://hydra:4444/oauth2/sessions/logout?id_token_hint=%s", idToken), http.StatusSeeOther)
 			// writeHttpCodeWithData(w, http.StatusSeeOther, fmt.Sprintf("http://localhost:4444/oauth2/sessions/logout?id_token_hint=%s", idToken))
 			return
 		} else {
