@@ -1,4 +1,4 @@
-kratos_public_endpoint_port: kratos:4433
-hydra_public_endpoint_port: hydra:4444
-hydra_admin_endpoint_port: hydra:4445
+kratos_public_endpoint_address: kratos:4433
+hydra_public_endpoint_address: hydra:4444
+hydra_admin_endpoint_address: hydra:4445
 port: 4455
